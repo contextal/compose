@@ -1,0 +1,549 @@
+x-ctx-common:
+  &ctx-common
+  restart: on-failure
+  volumes:
+    - "objects:/var/lib/objects"
+  networks:
+    - ctx-net
+
+x-worker-env:
+  &worker-env
+  RUST_LOG: "${LOG_LEVEL:-info}"
+  FRONTEND__BROKER__HOST: "rabbit1"
+  FRONTEND__BROKER__PORT: "5672"
+  FRONTEND__BROKER__USER: "${BROKER_USER:-guest}"
+  FRONTEND__BROKER__PASS: "${BROKER_PASS:-guest}"
+  FRONTEND__OBJECTS_PATH: "/var/lib/objects"
+  FRONTEND__CLAMD__HOST: "clamd"
+  FRONTEND__CLAMD__PORT: "3310"
+  FRONTEND__CLAMD__OBJECTS_PATH: "/var/lib/objects"
+  FRONTEND__TYPEDET__HOST: "typedet"
+  FRONTEND__TYPEDET__PORT: "3310"
+  FRONTEND__TYPEDET__OBJECTS_PATH: "/var/lib/objects"
+  FRONTEND__BACKEND__PATH: "./backend"
+  FRONTEND__BACKEND__PORT: "44203"
+  BACKEND__OBJECTS_PATH: "/var/lib/objects"
+  BACKEND__OUTPUT_PATH: "/tmp"
+
+x-worker-common:
+  &worker-common
+  <<: *ctx-common
+  depends_on:
+    rabbit1:
+      condition: service_healthy
+    clamd:
+      condition: service_healthy
+    typedet:
+      condition: service_healthy
+  deploy:
+    mode: replicated
+    replicas: 1
+
+services:
+  endpoint:
+    image: "contextal/endpoint:${PLATFORM_VERSION:-1.0.0}"
+    <<: *ctx-common
+    environment:
+      RUST_LOG: "${LOG_LEVEL-info}"
+      ENDPOINT__PORT: "8080"
+      ENDPOINT__OBJECTS_PATH: "/var/lib/objects"
+      ENDPOINT__ENABLE_REPROCESS: "true"
+      ENDPOINT__BROKER__HOST: "rabbit1"
+      ENDPOINT__BROKER__PORT: "5672"
+      ENDPOINT__BROKER__USER: "${BROKER_USER:-guest}"
+      ENDPOINT__BROKER__PASS: "${BROKER_PASS:-guest}"
+      ENDPOINT__CLAMD__HOST: "typedet"
+      ENDPOINT__CLAMD__PORT: "3310"
+      ENDPOINT__CLAMD__OBJECTS_PATH: "/var/lib/objects"
+      ENDPOINT__READ_DB__DBNAME: "grapher"
+      ENDPOINT__READ_DB__HOST: "postgres"
+      ENDPOINT__READ_DB__PORT: "5432"
+      ENDPOINT__READ_DB__USER: "grapher"
+      ENDPOINT__READ_DB__PASS: "${GRAPHDB_PASS:-grapher}"
+      ENDPOINT__WRITE_DB__DBNAME: "grapher"
+      ENDPOINT__WRITE_DB__HOST: "postgres"
+      ENDPOINT__WRITE_DB__PORT: "5432"
+      ENDPOINT__WRITE_DB__USER: "grapher"
+      ENDPOINT__WRITE_DB__PASS: "${GRAPHDB_PASS:-grapher}"
+    depends_on:
+      rabbit1:
+        condition: service_healthy
+      typedet:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    ports:
+      - 8080:8080
+    #mem_limit: 256mb
+
+  grapher:
+    image: "contextal/grapher:${PLATFORM_VERSION:-1.0.0}"
+    <<: *ctx-common
+    environment:
+      RUST_LOG: "${LOG_LEVEL-info}"
+      GRAPHER__BROKER__HOST: "rabbit1"
+      GRAPHER__BROKER__PORT: "5672"
+      GRAPHER__BROKER__USER: "${BROKER_USER:-guest}"
+      GRAPHER__BROKER__PASS: "${BROKER_PASS:-guest}"
+      GRAPHER__WRITE_DB__DBNAME: "grapher"
+      GRAPHER__WRITE_DB__HOST: "postgres"
+      GRAPHER__WRITE_DB__PORT: "5432"
+      GRAPHER__WRITE_DB__USER: "grapher"
+      GRAPHER__WRITE_DB__PASS: "${GRAPHDB_PASS:-grapher}"
+    depends_on:
+      rabbit1:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    volumes: []
+
+  director:
+    image: "contextal/director:${PLATFORM_VERSION:-1.0.0}"
+    <<: *ctx-common
+    environment:
+      RUST_LOG: "${LOG_LEVEL-info}"
+      DIRECTOR__BROKER__HOST: "rabbit1"
+      DIRECTOR__BROKER__PORT: "5672"
+      DIRECTOR__BROKER__USER: "${BROKER_USER:-guest}"
+      DIRECTOR__BROKER__PASS: "${BROKER_PASS:-guest}"
+      DIRECTOR__READ_DB__DBNAME: "grapher"
+      DIRECTOR__READ_DB__HOST: "postgres"
+      DIRECTOR__READ_DB__PORT: "5432"
+      DIRECTOR__READ_DB__USER: "grapher"
+      DIRECTOR__READ_DB__PASS: "${GRAPHDB_PASS:-grapher}"
+      DIRECTOR__WRITE_DB__DBNAME: "grapher"
+      DIRECTOR__WRITE_DB__HOST: "postgres"
+      DIRECTOR__WRITE_DB__PORT: "5432"
+      DIRECTOR__WRITE_DB__USER: "grapher"
+      DIRECTOR__WRITE_DB__PASS: "${GRAPHDB_PASS:-grapher}"
+    depends_on:
+      rabbit1:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    volumes: []
+
+  unknown:
+    image: "contextal/unknown:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "Unknown"
+
+  7zip:
+    image: "contextal/c7z-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "7z"
+      BACKEND__MAX_CHILDREN: "${SEVENZIP_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${SEVENZIP_MAX_CHILD_INPUT_SIZE:-41943040}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${SEVENZIP_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${SEVENZIP_MAX_PROCESSED_SIZE:-262144000}"
+
+  arj:
+    image: "contextal/arj-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "ARJ"
+      BACKEND__MAX_CHILDREN: "${ARJ_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${ARJ_MAX_CHILD_INPUT_SIZE:-41943040}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${ARJ_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${ARJ_MAX_PROCESSED_SIZE:-262144000}"
+
+  bzip2:
+    image: "contextal/bunzip2-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "Bzip2"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${BZIP2_MAX_CHILD_INPUT_SIZE:-262144000}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${BZIP2_MAX_CHILD_OUTPUT_SIZE:-262144000}"
+
+  cab:
+    image: "contextal/cab-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "CAB"
+      BACKEND__MAX_CHILDREN: "${CAB_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${CAB_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${CAB_MAX_PROCESSED_SIZE:-262144000}"
+
+  cdfs:
+    image: "contextal/cdfs-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "CDFS"
+      BACKEND__MAX_CHILDREN: "${CDFS_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${CDFS_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${CDFS_MAX_PROCESSED_SIZE:-262144000}"
+
+  elf:
+    image: "contextal/elf-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "ELF"
+
+  email:
+    image: "contextal/email-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "Email"
+      BACKEND__MAX_CHILDREN: "${EMAIL_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${EMAIL_MAX_CHILD_INPUT_SIZE:-41943040}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${EMAIL_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${EMAIL_MAX_PROCESSED_SIZE:-262144000}"
+
+  gzip:
+    image: "contextal/gunzip-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "Gzip"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${GZIP_MAX_CHILD_INPUT_SIZE:-262144000}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${GZIP_MAX_CHILD_OUTPUT_SIZE:-262144000}"
+      BACKEND__MAX_HEADERS: "${GZIP_MAX_HEADERS:-64}"
+
+  html:
+    image: "contextal/html-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "HTML"
+      BACKEND__MAX_CHILDREN: "${HTML_MAX_CHILDREN:-50}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${HTML_MAX_CHILD_OUTPUT_SIZE:-3145728}"
+      BACKEND__MAX_PROCESSED_SIZE: "${HTML_MAX_PROCESSED_SIZE:-10485760}"
+
+  image:
+    image: "contextal/image-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "Image"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${IMAGE_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+
+  lnk:
+    image: "contextal/lnk-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "LNK"
+
+  lzma:
+    image: "contextal/unlzma-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "LZMA"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${LZMA_MAX_CHILD_INPUT_SIZE:-262144000}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${LZMA_MAX_CHILD_OUTPUT_SIZE:-262144000}"
+
+  macho:
+    image: "contextal/macho-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "MachO"
+
+  msg:
+    image: "contextal/msg-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "MSG"
+      BACKEND__MAX_CHILDREN: "${MSG_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${MSG_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${MSG_MAX_PROCESSED_SIZE:-262144000}"
+
+  msi:
+    image: "contextal/msi-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "MSI"
+      BACKEND__MAX_CHILDREN: "${MSI_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${MSI_MAX_CHILD_INPUT_SIZE:-41943040}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${MSI_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${MSI_MAX_PROCESSED_SIZE:-262144000}"
+
+  odf:
+    image: "contextal/odf-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "ODF"
+      BACKEND__MAX_CHILDREN: "${ODF_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${ODF_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${ODF_MAX_PROCESSED_SIZE:-262144000}"
+
+  office:
+    image: "contextal/office-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "Office"
+      BACKEND__MAX_CHILDREN: "${OFFICE_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${OFFICE_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${OFFICE_MAX_PROCESSED_SIZE:-262144000}"
+      BACKEND__SHEET_SIZE_LIMIT: "${OFFICE_SHEET_SIZE_LIMIT:-5242880}"
+      BACKEND__SHARED_STRINGS_CACHE_LIMIT: "${OFFICE_SHARED_STRINGS_CACHE_LIMIT:-10000000}"
+
+  pdf:
+    image: "contextal/pdf-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "PDF"
+      BACKEND__MAX_CHILDREN: "${PDF_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${PDF_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${PDF_MAX_PROCESSED_SIZE:-262144000}"
+      BACKEND__MAX_OBJECTS: "${PDF_MAX_OBJECTS:-262144}"
+      BACKEND__MAX_OBJECT_DEPTH: "${PDF_MAX_OBJECT_DEPTH:-16}"
+      BACKEND__MAX_PAGES: "${PDF_MAX_PAGES:-2048}"
+      BACKEND__MAX_BOOKMARKS: "${PDF_MAX_BOOKMARKS:-8192}"
+      BACKEND__MAX_ANNOTATIONS: "${PDF_MAX_ANNOTATIONS:-16384}"
+      BACKEND__MAX_ATTACHMENTS: "${PDF_MAX_ATTACHMENTS:-128}"
+      BACKEND__MAX_ATTACHMENT_SIZE: "${PDF_MAX_ATTACHMENT_SIZE:-33554432}"
+      BACKEND__MAX_FONTS_PER_PAGE: "${PDF_MAX_FONTS_PER_PAGE:-128}"
+      BACKEND__MAX_LINKS: "${PDF_MAX_LINKS:-2048}"
+      BACKEND__MAX_SIGNATURES: "${PDF_MAX_SIGNATURES:-32}"
+      BACKEND__MAX_SIGNATURE_SIZE: "${PDF_MAX_SIGNATURE_SIZE:-262144}"
+      BACKEND__RENDER_PAGES: "${PDF_RENDER_PAGES:-false}"
+      BACKEND__RENDER_PAGE_WIDTH: "${PDF_RENDER_PAGE_WIDTH:-1920}"
+      BACKEND__SAVE_IMAGE_OBJECTS: "${PDF_SAVE_IMAGE_OBJECTS:-true}"
+      BACKEND__OUTPUT_IMAGE_FORMAT: "${PDF_OUTPUT_IMAGE_FORMAT:-png}"
+      BACKEND__OCR_MODE: "${PDF_OCR_MODE:-IfNoDocumentTextAvailable}"
+
+  pe:
+    image: "contextal/pe-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "PE"
+
+  rar:
+    image: "contextal/unrar-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "RAR"
+      BACKEND__MAX_CHILDREN: "${RAR_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${RAR_MAX_CHILD_INPUT_SIZE:-41943040}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${RAR_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${RAR_MAX_PROCESSED_SIZE:-262144000}"
+      BACKEND__MAX_ENTRIES_TO_PROCESS: "${RAR_MAX_ENTRIES_TO_PROCESS:-2000}"
+
+  rtf:
+    image: "contextal/rtf-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "RTF"
+      BACKEND__MAX_PROCESSED_SIZE: "${RTF_MAX_PROCESSED_SIZE:-10485760}"
+
+  tar:
+    image: "contextal/tar-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "Tar"
+      BACKEND__MAX_CHILDREN: "${TAR_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${TAR_MAX_CHILD_INPUT_SIZE:-41943040}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${TAR_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${TAR_MAX_PROCESSED_SIZE:-262144000}"
+
+  text:
+    image: "contextal/text-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "Text"
+      BACKEND__MAX_PROCESSED_SIZE: "${TEXT_MAX_PROCESSED_SIZE:-10485760}"
+      BACKEND__NATURAL_LANGUAGE_MAX_CHAR_WHITESPACE_RATIO: "${TEXT_NATURAL_LANGUAGE_MAX_CHAR_WHITESPACE_RATIO:-20.0}"
+      BACKEND__NATURAL_LANGUAGE_MIN_CONFIDENCE_LEVEL: "${TEXT_NATURAL_LANGUAGE_MIN_CONFIDENCE_LEVEL:-0.2}"
+      BACKEND__CREATE_URL_CHILDREN: "${TEXT_CREATE_URL_CHILDREN:-true}"
+
+  unibin:
+    image: "contextal/unibin-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "UniBin"
+      BACKEND__MAX_CHILDREN: "${UNIBIN_MAX_CHILDREN:-5}"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${UNIBIN_MAX_CHILD_INPUT_SIZE:-125829120}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${UNIBIN_MAX_CHILD_OUTPUT_SIZE:-125829120}"
+      BACKEND__MAX_PROCESSED_SIZE: "${UNIBIN_MAX_PROCESSED_SIZE:-262144000}"
+
+  url:
+    image: "contextal/url-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "URL"
+      XDG_CONFIG_HOME: "/tmp/.chromium"
+      XDG_CACHE_HOME: "/tmp/.chromium"
+      BACKEND__MAX_CHILDREN: "${URL_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${URL_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__WINDOW_SIZE: "${URL_WINDOW_SIZE:-[1920, 1200]}"
+      BACKEND__USER_AGENT: "${URL_USER_AGENT:-Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36}"
+      BACKEND__ACCEPT_LANGUAGE: "${URL_ACCEPT_LANGUAGE:-en-US,en}"
+      BACKEND__CHROME_REQUEST_TIMEOUT_MSEC: "${URL_CHROME_REQUEST_TIMEOUT_MSEC:-15000}"
+      BACKEND__IDLE_NETWORK_SETTLE_TIME_MSEC: "${URL_IDLE_NETWORK_SETTLE_TIME_MSEC:-5000}"
+      BACKEND__PROXY: "${URL_PROXY:-}"
+      BACKEND__MAX_INSTANCE_LIFETIME_SECONDS: "${URL_MAX_INSTANCE_LIFETIME_SECONDS:-600}"
+      BACKEND__MAX_BACKEND_REQUESTS_PER_INSTANCE: "${URL_MAX_BACKEND_REQUESTS_PER_INSTANCE:-10}"
+      BACKEND__TAKE_SCREENSHOT: "${URL_TAKE_SCREENSHOT:-true}"
+      BACKEND__PERFORM_PRINT_TO_PDF: "${URL_PERFORM_PRINT_TO_PDF:-true}"
+      BACKEND__SAVE_ORIGINAL_RESPONSE: "${URL_SAVE_ORIGINAL_RESPONSE:-true}"
+      BACKEND__MAX_RESPONSE_CONTENT_LENGTH: "${URL_MAX_RESPONSE_CONTENT_LENGTH:-512000}"
+      BACKEND__MAX_RESPONSE_DATA_LENGTH: "${URL_MAX_RESPONSE_DATA_LENGTH:-1024000}"
+      BACKEND__EXCLUDED_RESOURCE_TYPES: "${URL_EXCLUDED_RESOURCE_TYPES:-[ Font, Stylesheet ]}"
+
+  zip:
+    image: "contextal/unzip-rs:${PLATFORM_VERSION:-1.0.0}"
+    <<: *worker-common
+    environment:
+      <<: *worker-env
+      FRONTEND__WORKER_TYPE: "ZIP"
+      BACKEND__MAX_CHILDREN: "${ZIP_MAX_CHILDREN:-100}"
+      BACKEND__MAX_CHILD_INPUT_SIZE: "${ZIP_MAX_CHILD_INPUT_SIZE:-41943040}"
+      BACKEND__MAX_CHILD_OUTPUT_SIZE: "${ZIP_MAX_CHILD_OUTPUT_SIZE:-41943040}"
+      BACKEND__MAX_PROCESSED_SIZE: "${ZIP_MAX_PROCESSED_SIZE:-262144000}"
+
+  rabbit1:
+    image: rabbitmq:3.13
+    environment:
+      RABBITMQ_DEFAULT_USER: "${BROKER_USER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${BROKER_PASS:-guest}"
+    networks:
+      - ctx-net
+    restart: on-failure
+    healthcheck:
+      test: [
+        "CMD-SHELL", "rabbitmqctl await_online_nodes 1 --timeout 1"
+      ]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+      start_period: 30s
+    volumes:
+      - "rabbit1:/var/lib/rabbitmq"
+
+  clamd:
+    image: "contextal/clamav:${PLATFORM_VERSION:-1.0.0}"
+    volumes:
+      - "objects:/var/lib/objects:ro"
+    networks:
+      - ctx-net
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  typedet:
+    image: "contextal/typedet:${PLATFORM_VERSION:-1.0.0}"
+    volumes:
+      - "objects:/var/lib/objects:ro"
+    networks:
+      - ctx-net
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: "grapher"
+      POSTGRES_USER: "grapher"
+      POSTGRES_PASSWORD: "${GRAPHDB_PASS:-grapher}"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./postgres/init-database.sh:/docker-entrypoint-initdb.d/init-database.sh
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - ctx-net
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - ctx-net
+
+  grafana:
+    image: grafana/grafana-oss
+    volumes:
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    networks:
+      - ctx-net
+    ports:
+      - 8888:3000
+    depends_on:
+      - prometheus
+
+  console:
+    profiles: [console]
+    image: "contextal/console:${PLATFORM_VERSION:-1.0.0}"
+    environment:
+      CLOUD_API_URL: "http://endpoint:8080/api/v1"
+      CAN_DOWNLOAD_OBJECT: "enabled"
+      CAN_PREVIEW_OBJECT: "enabled"
+      DATABASE_URL: "postgres://console:${CONSOLE_DB_PASSWORD:-consolepwd}@consoledb:5432/console"
+      NODE_ENV: "production"
+    ports:
+      - 8000:3000
+    networks:
+      - ctx-net
+    volumes:
+      - jwtkeys:/home/node/app/keys
+      - ./console/start.sh:/home/node/app/start.sh
+    command: "./start.sh"
+    restart: unless-stopped
+    depends_on:
+      consoledb:
+        condition: service_started
+      endpoint:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 2G
+
+  consoledb:
+    profiles: [console]
+    image: "postgres:16"
+    environment:
+      POSTGRES_PASSWORD: "${CONSOLEDB_ADMIN_PASS:-graphdbadmin}"
+      PG_USER: "console"
+      PG_DATABASE: "console"
+      PG_PASSWORD: "${CONSOLE_DB_PASSWORD:-consolepwd}"
+    restart: always
+    networks:
+      - ctx-net
+    shm_size: 128mb
+    volumes:
+      - consoledb:/var/lib/postgresql/data
+      - ./console/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh
+
+  gc:
+    image: "alpine"
+    command: [ "/bin/sh", "-c", "while true; do find /var/lib/objects -type f -mmin +${OBJECTS_MAX_AGE_MINS:-1440} -delete; sleep 60; done" ]
+    restart: unless-stopped
+    volumes:
+      - "objects:/var/lib/objects"
+
+networks:
+  ctx-net:
+
+volumes:
+  objects:
+  rabbit1:
+  postgres:
+  consoledb:
+  jwtkeys:

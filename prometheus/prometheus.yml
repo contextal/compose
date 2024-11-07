@@ -1,0 +1,193 @@
+#global:
+  #scrape_interval: 15s
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  # external_labels:
+    #monitor: 'codelab-monitor'
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'unknown'
+    dns_sd_configs:
+      - names: ['unknown']
+        type: 'A'
+        port: 9000
+
+  - job_name: '7zip'
+    dns_sd_configs:
+      - names: ['7zip']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'arj'
+    dns_sd_configs:
+      - names: ['arj']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'bzip2'
+    dns_sd_configs:
+      - names: ['bzip2']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'cab'
+    dns_sd_configs:
+      - names: ['cab']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'cdfs'
+    dns_sd_configs:
+      - names: ['cdfs']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'elf'
+    dns_sd_configs:
+      - names: ['elf']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'email'
+    dns_sd_configs:
+      - names: ['email']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'gzip'
+    dns_sd_configs:
+      - names: ['gzip']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'html'
+    dns_sd_configs:
+      - names: ['html']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'image'
+    dns_sd_configs:
+      - names: ['image']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'lnk'
+    dns_sd_configs:
+      - names: ['lnk']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'lzma'
+    dns_sd_configs:
+      - names: ['lzma']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'macho'
+    dns_sd_configs:
+      - names: ['macho']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'msg'
+    dns_sd_configs:
+      - names: ['msg']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'msi'
+    dns_sd_configs:
+      - names: ['msi']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'odf'
+    dns_sd_configs:
+      - names: ['odf']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'office'
+    dns_sd_configs:
+      - names: ['office']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'pdf'
+    dns_sd_configs:
+      - names: ['pdf']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'pe'
+    dns_sd_configs:
+      - names: ['pe']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'rar'
+    dns_sd_configs:
+      - names: ['rar']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'rtf'
+    dns_sd_configs:
+      - names: ['rtf']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'tar'
+    dns_sd_configs:
+      - names: ['tar']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'text'
+    dns_sd_configs:
+      - names: ['text']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'unibin'
+    dns_sd_configs:
+      - names: ['unibin']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'url'
+    dns_sd_configs:
+      - names: ['url']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'zip'
+    dns_sd_configs:
+      - names: ['']
+        type: 'A'
+        port: 9000
+
+  - job_name: 'api_endpoint'
+    dns_sd_configs:
+      - names: ['endpoint']
+        type: 'A'
+        port: 8080
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'rabbitmq-server'
+    static_configs:
+      - targets: [ 'rabbit1:15692' ]
+
+  - job_name: 'grapher'
+    dns_sd_configs:
+      - names: ['grapher']
+        type: 'A'
+        port: 9000
