@@ -41,7 +41,7 @@ x-worker-common:
 
 services:
   endpoint:
-    image: "contextal/endpoint:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/endpoint:${PLATFORM_VERSION:-1.3}"
     <<: *ctx-common
     environment:
       RUST_LOG: "${LOG_LEVEL-info}"
@@ -77,7 +77,7 @@ services:
     #mem_limit: 256mb
 
   grapher:
-    image: "contextal/grapher:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/grapher:${PLATFORM_VERSION:-1.3}"
     <<: *ctx-common
     environment:
       RUST_LOG: "${LOG_LEVEL-info}"
@@ -98,7 +98,7 @@ services:
     volumes: []
 
   director:
-    image: "contextal/director:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/director:${PLATFORM_VERSION:-1.3}"
     <<: *ctx-common
     environment:
       RUST_LOG: "${LOG_LEVEL-info}"
@@ -124,14 +124,14 @@ services:
     volumes: []
 
   unknown:
-    image: "contextal/unknown:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/unknown:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
       FRONTEND__WORKER_TYPE: "Unknown"
 
   7zip:
-    image: "contextal/c7z-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/c7z-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -142,7 +142,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${SEVENZIP_MAX_PROCESSED_SIZE:-262144000}"
 
   arj:
-    image: "contextal/arj-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/arj-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -153,7 +153,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${ARJ_MAX_PROCESSED_SIZE:-262144000}"
 
   bzip2:
-    image: "contextal/bunzip2-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/bunzip2-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -162,7 +162,7 @@ services:
       BACKEND__MAX_CHILD_OUTPUT_SIZE: "${BZIP2_MAX_CHILD_OUTPUT_SIZE:-262144000}"
 
   cab:
-    image: "contextal/cab-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/cab-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -172,7 +172,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${CAB_MAX_PROCESSED_SIZE:-262144000}"
 
   cdfs:
-    image: "contextal/cdfs-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/cdfs-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -182,21 +182,21 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${CDFS_MAX_PROCESSED_SIZE:-262144000}"
 
   domain:
-    image: "contextal/domain-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/domain-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
       FRONTEND__WORKER_TYPE: "Domain"
 
   elf:
-    image: "contextal/elf-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/elf-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
       FRONTEND__WORKER_TYPE: "ELF"
 
   email:
-    image: "contextal/email-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/email-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -207,7 +207,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${EMAIL_MAX_PROCESSED_SIZE:-262144000}"
 
   gzip:
-    image: "contextal/gunzip-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/gunzip-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -217,7 +217,7 @@ services:
       BACKEND__MAX_HEADERS: "${GZIP_MAX_HEADERS:-64}"
 
   html:
-    image: "contextal/html-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/html-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -228,7 +228,7 @@ services:
       BACKEND__CREATE_DOMAIN_CHILDREN: "${HTML_CREATE_DOMAIN_CHILDREN:-true}"
 
   image:
-    image: "contextal/image-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/image-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -236,14 +236,14 @@ services:
       BACKEND__MAX_CHILD_OUTPUT_SIZE: "${IMAGE_MAX_CHILD_OUTPUT_SIZE:-41943040}"
 
   lnk:
-    image: "contextal/lnk-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/lnk-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
       FRONTEND__WORKER_TYPE: "LNK"
 
   lzma:
-    image: "contextal/unlzma-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/unlzma-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -252,14 +252,14 @@ services:
       BACKEND__MAX_CHILD_OUTPUT_SIZE: "${LZMA_MAX_CHILD_OUTPUT_SIZE:-262144000}"
 
   macho:
-    image: "contextal/macho-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/macho-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
       FRONTEND__WORKER_TYPE: "MachO"
 
   msg:
-    image: "contextal/msg-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/msg-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -269,7 +269,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${MSG_MAX_PROCESSED_SIZE:-262144000}"
 
   msi:
-    image: "contextal/msi-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/msi-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -280,7 +280,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${MSI_MAX_PROCESSED_SIZE:-262144000}"
 
   odf:
-    image: "contextal/odf-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/odf-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -291,7 +291,7 @@ services:
       BACKEND__CREATE_DOMAIN_CHILDREN: "${ODF_CREATE_DOMAIN_CHILDREN:-true}"
 
   office:
-    image: "contextal/office-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/office-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -304,7 +304,7 @@ services:
       BACKEND__CREATE_DOMAIN_CHILDREN: "${OFFICE_CREATE_DOMAIN_CHILDREN:-true}"
 
   pdf:
-    image: "contextal/pdf-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/pdf-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -314,7 +314,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${PDF_MAX_PROCESSED_SIZE:-262144000}"
       BACKEND__MAX_OBJECTS: "${PDF_MAX_OBJECTS:-262144}"
       BACKEND__MAX_OBJECT_DEPTH: "${PDF_MAX_OBJECT_DEPTH:-16}"
-      BACKEND__MAX_PAGES: "${PDF_MAX_PAGES:-2048}"
+      BACKEND__MAX_PAGES: "${PDF_MAX_PAGES:-20}"
       BACKEND__MAX_BOOKMARKS: "${PDF_MAX_BOOKMARKS:-8192}"
       BACKEND__MAX_ANNOTATIONS: "${PDF_MAX_ANNOTATIONS:-16384}"
       BACKEND__MAX_ATTACHMENTS: "${PDF_MAX_ATTACHMENTS:-128}"
@@ -331,14 +331,14 @@ services:
       BACKEND__CREATE_DOMAIN_CHILDREN: "${PDF_CREATE_DOMAIN_CHILDREN:-true}"
 
   pe:
-    image: "contextal/pe-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/pe-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
       FRONTEND__WORKER_TYPE: "PE"
 
   rar:
-    image: "contextal/unrar-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/unrar-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -350,7 +350,7 @@ services:
       BACKEND__MAX_ENTRIES_TO_PROCESS: "${RAR_MAX_ENTRIES_TO_PROCESS:-2000}"
 
   rtf:
-    image: "contextal/rtf-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/rtf-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -358,7 +358,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${RTF_MAX_PROCESSED_SIZE:-10485760}"
 
   tar:
-    image: "contextal/tar-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/tar-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -369,7 +369,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${TAR_MAX_PROCESSED_SIZE:-262144000}"
 
   text:
-    image: "contextal/text-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/text-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -382,7 +382,7 @@ services:
       BACKEND__CREATE_DOMAIN_CHILDREN: "${TEXT_CREATE_DOMAIN_CHILDREN:-true}"
 
   unibin:
-    image: "contextal/unibin-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/unibin-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -393,7 +393,7 @@ services:
       BACKEND__MAX_PROCESSED_SIZE: "${UNIBIN_MAX_PROCESSED_SIZE:-262144000}"
 
   url:
-    image: "contextal/url-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/url-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -418,7 +418,7 @@ services:
       BACKEND__EXCLUDED_RESOURCE_TYPES: "${URL_EXCLUDED_RESOURCE_TYPES:-[ Font, Stylesheet ]}"
 
   zip:
-    image: "contextal/unzip-rs:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/unzip-rs:${PLATFORM_VERSION:-1.3}"
     <<: *worker-common
     environment:
       <<: *worker-env
@@ -448,7 +448,7 @@ services:
       - "rabbit1:/var/lib/rabbitmq"
 
   clamd:
-    image: "contextal/clamav:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/clamav:${PLATFORM_VERSION:-1.3}"
     environment:
       RUST_LOG: "${LOG_LEVEL:-info}"
       SIGMGR__BROKER__HOST: "rabbit1"
@@ -475,11 +475,12 @@ services:
       replicas: 1
 
   typedet:
-    image: "contextal/typedet:${PLATFORM_VERSION:-1.2}"
+    image: "contextal/typedet:${PLATFORM_VERSION:-1.3}"
     volumes:
       - "objects:/var/lib/objects:ro"
     networks:
       - ctx-net
+    restart: unless-stopped
     deploy:
       mode: replicated
       replicas: 1
@@ -496,7 +497,6 @@ services:
       - postgres:/var/lib/postgresql/data
     networks:
       - ctx-net
-    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus
@@ -519,7 +519,7 @@ services:
 
   console:
     profiles: [console]
-    image: "contextal/console:${PLATFORM_VERSION:-1.2.0}"
+    image: "contextal/console:${PLATFORM_VERSION:-1.3.0}"
     environment:
       CLOUD_API_URL: "http://endpoint:8080/api/v1"
       CAN_DOWNLOAD_OBJECT: "enabled"
@@ -554,7 +554,6 @@ services:
       PG_USER: "console"
       PG_DATABASE: "console"
       PG_PASSWORD: "${CONSOLE_DB_PASSWORD:-consolepwd}"
-    restart: unless-stopped
     networks:
       - ctx-net
     shm_size: 128mb
